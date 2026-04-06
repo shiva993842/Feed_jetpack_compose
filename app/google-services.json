@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "510312579797",
+    "project_id": "feed-d3128",
+    "storage_bucket": "feed-d3128.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:510312579797:android:3dd8741d2a760b2908985c",
+        "android_client_info": {
+          "package_name": "com.example.feed"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAiQazomJtl_pWW_mMMTigMVSwA1cXN6fw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
