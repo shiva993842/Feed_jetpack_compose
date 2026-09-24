@@ -31,7 +31,8 @@ fun PostCard(
     post           : PostModel,
     currentUserId  : String     = "",
     onSaveClick    : () -> Unit = {},
-    onProfileClick : () -> Unit = {}
+    // Called when the user taps an avatar/username — caller provides userId + username
+    onProfileClick : (userId: String, username: String) -> Unit = { _, _ -> }
 ) {
     var isLiked      by remember { mutableStateOf(post.likes.contains(currentUserId)) }
     var likeCount    by remember { mutableStateOf(post.likes.size) }
@@ -40,11 +41,10 @@ fun PostCard(
     var showLikes    by remember { mutableStateOf(false) }
     var showShare    by remember { mutableStateOf(false) }
 
-    // Build the share text from the actual post data
     val shareText = buildString {
-        if (post.caption.isNotEmpty()) append("${post.caption}\n")
+        if (post.caption.isNotEmpty())  append("${post.caption}\n")
         if (post.imageUrl.isNotEmpty()) append(post.imageUrl)
-        else append("Check out this post by @${post.username}!")
+        else                            append("Check out this post by @${post.username}!")
     }
 
     Column(
@@ -53,20 +53,23 @@ fun PostCard(
             .background(Color.White)
     ) {
 
-        // ── Post Header ───────────────────────
+        // ── Post Header ────────────────────────────────────────────────────
         Row(
-            modifier = Modifier
+            modifier              = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 12.dp, vertical = 8.dp),
             verticalAlignment     = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
+            // Tapping the avatar / username navigates to FriendsProfileScreen
             Row(
                 verticalAlignment = Alignment.CenterVertically,
-                modifier          = Modifier.clickable { onProfileClick() }
+                modifier          = Modifier.clickable {
+                    onProfileClick(post.userId, post.username)
+                }
             ) {
                 Box(
-                    modifier = Modifier
+                    modifier         = Modifier
                         .size(36.dp)
                         .clip(CircleShape)
                         .background(Primary.copy(alpha = 0.2f)),
@@ -106,7 +109,7 @@ fun PostCard(
             }
         }
 
-        // ── Post Image ────────────────────────
+        // ── Post Image ─────────────────────────────────────────────────────
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -125,19 +128,14 @@ fun PostCard(
                     modifier         = Modifier.fillMaxSize().background(Color(0xFFF5F5F5)),
                     contentAlignment = Alignment.Center
                 ) {
-                    Icon(
-                        Icons.Outlined.Image,
-                        contentDescription = null,
-                        tint               = Color(0xFFCCCCCC),
-                        modifier           = Modifier.size(60.dp)
-                    )
+                    Icon(Icons.Outlined.Image, contentDescription = null, tint = Color(0xFFCCCCCC), modifier = Modifier.size(60.dp))
                 }
             }
         }
 
-        // ── Action Row ────────────────────────
+        // ── Action Row ─────────────────────────────────────────────────────
         Row(
-            modifier = Modifier
+            modifier              = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 4.dp, vertical = 4.dp),
             verticalAlignment     = Alignment.CenterVertically,
@@ -171,14 +169,9 @@ fun PostCard(
                 Spacer(Modifier.width(4.dp))
                 // Comment
                 IconButton(onClick = { showComments = true }) {
-                    Icon(
-                        imageVector        = Icons.Outlined.ChatBubbleOutline,
-                        contentDescription = "Comment",
-                        tint               = Color(0xFF1A1A1A),
-                        modifier           = Modifier.size(24.dp)
-                    )
+                    Icon(Icons.Outlined.ChatBubbleOutline, contentDescription = "Comment", tint = Color(0xFF1A1A1A), modifier = Modifier.size(24.dp))
                 }
-                // Share → opens ShareBottomSheet with real post data
+                // Share
                 IconButton(onClick = { showShare = true }) {
                     Icon(
                         painter            = painterResource(id = R.drawable.share),
@@ -202,16 +195,20 @@ fun PostCard(
             }
         }
 
-        // ── Caption ───────────────────────────
+        // ── Caption ────────────────────────────────────────────────────────
         if (post.caption.isNotEmpty()) {
             Row(modifier = Modifier.padding(horizontal = 16.dp, vertical = 2.dp)) {
-                Text(text = post.username, fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1A1A1A))
+                Text(
+                    text     = post.username,
+                    fontSize = 14.sp, fontWeight = FontWeight.SemiBold, color = Color(0xFF1A1A1A),
+                    modifier = Modifier.clickable { onProfileClick(post.userId, post.username) }
+                )
                 Spacer(Modifier.width(4.dp))
-                Text(text = post.caption, fontSize = 14.sp, color = Color(0xFF1A1A1A), maxLines = 2, overflow = TextOverflow.Ellipsis)
+                Text(post.caption, fontSize = 14.sp, color = Color(0xFF1A1A1A), maxLines = 2, overflow = TextOverflow.Ellipsis)
             }
         }
 
-        // ── View all comments ─────────────────
+        // ── View all comments ──────────────────────────────────────────────
         if (post.commentsCount > 0) {
             Text(
                 text     = "View all ${post.commentsCount} comments",
@@ -219,14 +216,11 @@ fun PostCard(
                 color    = Color(0xFF888888),
                 modifier = Modifier
                     .padding(horizontal = 16.dp, vertical = 2.dp)
-                    .clickable(
-                        indication        = null,
-                        interactionSource = remember { MutableInteractionSource() }
-                    ) { showComments = true }
+                    .clickable(indication = null, interactionSource = remember { MutableInteractionSource() }) { showComments = true }
             )
         }
 
-        // ── Timestamp ─────────────────────────
+        // ── Timestamp ──────────────────────────────────────────────────────
         Text(
             text     = getTimeAgo(post.timestamp),
             fontSize = 11.sp,
@@ -238,21 +232,10 @@ fun PostCard(
         HorizontalDivider(color = Color(0xFFF0F0F0), thickness = 0.5.dp)
     }
 
-    // ── Bottom sheets ─────────────────────────
-    if (showComments) {
-        CommentsBottomSheet(onDismiss = { showComments = false })
-    }
-    if (showLikes) {
-        LikesBottomSheet(likesCount = likeCount, onDismiss = { showLikes = false })
-    }
-    if (showShare) {
-        // Pass the real post content — ShareBottomSheet will use it
-        // when the user taps "More Apps" or "Share via other apps"
-        ShareBottomSheet(
-            shareText = shareText,
-            onDismiss = { showShare = false }
-        )
-    }
+    // ── Bottom Sheets ──────────────────────────────────────────────────────
+    if (showComments) { CommentsBottomSheet(onDismiss = { showComments = false }) }
+    if (showLikes)    { LikesBottomSheet(likesCount = likeCount, onDismiss = { showLikes = false }) }
+    if (showShare)    { ShareBottomSheet(shareText = shareText, onDismiss = { showShare = false }) }
 }
 
 fun getTimeAgo(timestamp: Long): String {

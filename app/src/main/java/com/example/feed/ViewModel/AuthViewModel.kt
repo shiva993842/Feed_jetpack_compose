@@ -69,7 +69,7 @@ class AuthViewModel : ViewModel() {
             _registerState.value = UiState.Error("Password must be 6+ characters!")
             return
         }
-        isLoginFlow  = false    // ← mark as register flow
+        isLoginFlow  = false          // ← mark as register flow
         tempFullName = fullName
         tempUsername = username
         tempEmail    = email

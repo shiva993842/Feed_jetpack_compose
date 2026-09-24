@@ -1,4 +1,4 @@
-package com.example.feed.View
+package com.example.feed.MyProfile
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -15,12 +15,14 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.GridOn
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.PersonPin
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -28,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.*
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController  // ← ADDED (needed for Preview)
 import coil.compose.AsyncImage
 import com.example.feed.View.components.FeedBottomNavBar
 import com.example.feed.navigation.Screen
@@ -75,16 +78,20 @@ fun ProfileScreen(navController: NavController) {
 
     ProfileContent(
         selectedRoute  = selectedRoute,
-        onNavItemClick = { route -> if (route != selectedRoute) navController.navigate(route) }
+        navController  = navController,
+        onNavItemClick = { route -> if (route != selectedRoute) navController.navigate(route) },
+        onMenuClick    = { navController.navigate(Screen.Settings.route) }  // ← ADD THIS
     )
 }
 
 @Composable
 fun ProfileContent(
     selectedRoute  : String           = "profile",
-    onNavItemClick : (String) -> Unit = {}
+    navController  : NavController?   = null,                              // ← ADDED
+    onNavItemClick : (String) -> Unit = {},
+    onMenuClick    : () -> Unit       = {}
 ) {
-    var selectedTab by remember { mutableIntStateOf(0) }   // 0 = Grid, 1 = Tagged
+    var selectedTab by remember { mutableIntStateOf(0) }
 
     Scaffold(
         contentWindowInsets = WindowInsets(0, 0, 0, 0),
@@ -106,17 +113,19 @@ fun ProfileContent(
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
 
-            // ── Profile Header ────────────────────── (spans full width)
             item(span = { GridItemSpan(3) }) {
-                ProfileHeader()
+                ProfileHeader(
+                    onEditProfileClick = {                                  // ← ADDED
+                        navController?.navigate(Screen.EditProfile.route)  // ← ADDED
+                    }   ,
+                    onMenuClick = onMenuClick// ← ADDED
+                )
             }
 
-            // ── Story Highlights ──────────────────── (spans full width)
             item(span = { GridItemSpan(3) }) {
                 HighlightsRow()
             }
 
-            // ── Tab Row ───────────────────────────── (spans full width)
             item(span = { GridItemSpan(3) }) {
                 ProfileTabRow(
                     selectedTab   = selectedTab,
@@ -124,13 +133,11 @@ fun ProfileContent(
                 )
             }
 
-            // ── Posts Grid ────────────────────────────
             if (selectedTab == 0) {
                 items(profilePosts) { post ->
                     ProfileGridItem(post = post)
                 }
             } else {
-                // Tagged — show a subset with different seeds
                 items(profilePosts.take(6)) { post ->
                     ProfileGridItem(
                         post = post.copy(
@@ -146,7 +153,10 @@ fun ProfileContent(
 // ── Profile Header Section ─────────────────────────────────────────────────
 
 @Composable
-fun ProfileHeader() {
+fun ProfileHeader(
+    onEditProfileClick : () -> Unit = {},
+    onMenuClick        : () -> Unit = {}
+) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -170,10 +180,15 @@ fun ProfileHeader() {
             )
             Row(horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Icon(
-                    imageVector        = Icons.Default.GridOn,
+                    imageVector        = Icons.Default.Settings,
                     contentDescription = "Menu",
                     tint               = Color(0xFF1A1A1A),
-                    modifier           = Modifier.size(24.dp)
+                    modifier           = Modifier
+                        .size(24.dp)
+                        .clickable(
+                            indication        = null,
+                            interactionSource = remember { MutableInteractionSource() }
+                        ) { onMenuClick() }               // ← ADD THIS
                 )
             }
         }
@@ -183,7 +198,6 @@ fun ProfileHeader() {
             modifier          = Modifier.fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            // Avatar with story ring
             Box(
                 modifier         = Modifier
                     .size(84.dp)
@@ -204,7 +218,6 @@ fun ProfileHeader() {
 
             Spacer(Modifier.width(16.dp))
 
-            // Stats
             Row(
                 modifier              = Modifier.weight(1f),
                 horizontalArrangement = Arrangement.SpaceEvenly
@@ -217,7 +230,6 @@ fun ProfileHeader() {
 
         Spacer(Modifier.height(12.dp))
 
-        // Name + Bio
         Text(
             text       = "Andrew Mundy",
             fontSize   = 14.sp,
@@ -249,7 +261,7 @@ fun ProfileHeader() {
             modifier              = Modifier.fillMaxWidth(),
             horizontalArrangement = Arrangement.spacedBy(8.dp)
         ) {
-            // Edit Profile
+            // Edit Profile — NOW NAVIGATES                                 // ← CHANGED
             Box(
                 modifier = Modifier
                     .weight(1f)
@@ -258,7 +270,7 @@ fun ProfileHeader() {
                     .clickable(
                         indication        = null,
                         interactionSource = remember { MutableInteractionSource() }
-                    ) { }
+                    ) { onEditProfileClick() }                             // ← CHANGED  (was empty { })
                     .padding(vertical = 7.dp),
                 contentAlignment = Alignment.Center
             ) {
@@ -372,7 +384,7 @@ fun ProfileTabRow(selectedTab: Int, onTabSelected: (Int) -> Unit) {
 
 @Composable
 fun ProfileTab(
-    icon       : androidx.compose.ui.graphics.vector.ImageVector,
+    icon       : ImageVector,
     isSelected : Boolean,
     onClick    : () -> Unit,
     modifier   : Modifier = Modifier
@@ -423,7 +435,6 @@ fun ProfileGridItem(post: ProfilePostItem) {
             modifier           = Modifier.fillMaxSize()
         )
 
-        // Reel indicator
         if (post.isReel) {
             Icon(
                 imageVector        = Icons.Default.PlayArrow,
@@ -436,7 +447,6 @@ fun ProfileGridItem(post: ProfilePostItem) {
             )
         }
 
-        // Hover-like overlay showing likes/comments
         if (showOverlay) {
             Box(
                 modifier         = Modifier
@@ -467,5 +477,5 @@ fun ProfileGridItem(post: ProfilePostItem) {
 @Preview(showBackground = true, showSystemUi = true)
 @Composable
 fun ProfileScreenPreview() {
-    ProfileContent()
+    ProfileContent(navController = rememberNavController())                // ← CHANGED
 }

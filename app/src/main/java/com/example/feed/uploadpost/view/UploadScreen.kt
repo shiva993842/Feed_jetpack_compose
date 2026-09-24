@@ -1,8 +1,9 @@
-package com.example.feed.View
+package com.example.feed.uploadpost.view
 
 import android.Manifest
 import android.content.ContentUris
 import android.content.Context
+import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.MediaStore
@@ -27,6 +28,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.*
 import androidx.compose.ui.draw.*
 import androidx.compose.ui.graphics.*
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.*
@@ -39,8 +41,10 @@ import androidx.core.content.FileProvider
 import androidx.navigation.NavController
 import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import coil.request.videoFrameMillis
 import com.example.feed.View.components.FeedBottomNavBar
+import com.example.feed.navigation.Screen
 import java.io.File
 
 enum class UploadStep { GALLERY, PREVIEW, CAPTION }
@@ -60,7 +64,7 @@ data class MediaItem(
 @Composable
 fun UploadScreen(navController: NavController) {
     val currentBackStack by navController.currentBackStackEntryAsState()
-    val selectedRoute: String = currentBackStack?.destination?.route ?: "upload"
+    val selectedRoute: String = currentBackStack?.destination?.route ?: Screen.Upload.route
     UploadContent(
         selectedRoute  = selectedRoute,
         onNavItemClick = { route -> if (route != selectedRoute) navController.navigate(route) },
@@ -100,14 +104,14 @@ fun UploadContent(
 
     val hasStoragePerm = storagePerms.all {
         ContextCompat.checkSelfPermission(context, it) ==
-                android.content.pm.PackageManager.PERMISSION_GRANTED
+                PackageManager.PERMISSION_GRANTED
     }
 
     // ✅ Camera permission tracked separately
     var hasCameraPerm by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                    == android.content.pm.PackageManager.PERMISSION_GRANTED
+                    == PackageManager.PERMISSION_GRANTED
         )
     }
 
@@ -410,7 +414,7 @@ fun GalleryStep(
 }
 
 @Composable
-fun SmallIconBtn(icon: androidx.compose.ui.graphics.vector.ImageVector, desc: String, onClick: () -> Unit = {}) {
+fun SmallIconBtn(icon: ImageVector, desc: String, onClick: () -> Unit = {}) {
     Box(
         modifier = Modifier
             .size(32.dp).clip(CircleShape).background(Color(0xFFF2F2F2))
@@ -464,7 +468,7 @@ fun GalleryThumbnail(item: MediaItem, isSelected: Boolean, onSelect: () -> Unit)
         if (item.isVideo) {
             // ✅ For videos use ImageRequest with VIDEO_FRAME_MICROS to get thumbnail
             AsyncImage(
-                model = coil.request.ImageRequest.Builder(context)
+                model = ImageRequest.Builder(context)
                     .data(item.uri)
                     .videoFrameMillis(0)          // grab first frame
                     .crossfade(true)
@@ -491,7 +495,7 @@ fun GalleryThumbnail(item: MediaItem, isSelected: Boolean, onSelect: () -> Unit)
                     .height(24.dp)
                     .align(Alignment.BottomCenter)
                     .background(
-                        brush = androidx.compose.ui.graphics.Brush.verticalGradient(
+                        brush = Brush.verticalGradient(
                             colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.5f))
                         )
                     )
@@ -639,7 +643,7 @@ fun CaptionStep(paddingValues: PaddingValues, selectedUri: Uri?, captionText: Te
 }
 
 @Composable
-fun CaptionOptionRow(icon: androidx.compose.ui.graphics.vector.ImageVector, label: String, isInput: Boolean = false, value: String = "", onValue: (String) -> Unit = {}) {
+fun CaptionOptionRow(icon: ImageVector, label: String, isInput: Boolean = false, value: String = "", onValue: (String) -> Unit = {}) {
     Row(
         modifier = Modifier.fillMaxWidth().clickable(indication = null,
             interactionSource = remember { MutableInteractionSource() }) {

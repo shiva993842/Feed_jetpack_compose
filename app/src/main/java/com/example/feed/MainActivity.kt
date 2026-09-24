@@ -4,7 +4,8 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
-import com.example.feed.navigation.AppNavGraph
+import com.example.feed.navigation.AppNavigation
+
 import com.example.feed.ui.theme.FeedTheme
 
 class MainActivity : ComponentActivity() {
@@ -13,7 +14,7 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             FeedTheme {
-                AppNavGraph()
+                AppNavigation()
             }
         }
     }
